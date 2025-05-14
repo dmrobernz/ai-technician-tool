@@ -9,7 +9,20 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
   <script src="firebaseConfig.js"></script>
-  <style>
+  
+    <style>
+      * { box-sizing: border-box; }
+      table { width: 100%; border-collapse: collapse; display: block; overflow-x: auto; }
+      th, td { padding: 8px; border: 1px solid #ccc; text-align: left; min-width: 120px; }
+      @media (max-width: 768px) {
+        body { margin: 10px; }
+        h1 { font-size: 22px; }
+        label { font-size: 14px; }
+        input, textarea { font-size: 14px; }
+        button { font-size: 14px; padding: 8px 12px; }
+        th, td { font-size: 13px; }
+      }
+
     body { font-family: Arial, sans-serif; margin: 30px; background: #f4f4f4; }
     h1, h2 { color: #2e6c80; }
     .section { background: white; padding: 20px; margin-bottom: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
