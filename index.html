@@ -1,0 +1,105 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AI Technician Tool</title>
+  <link rel="manifest" href="manifest.json">
+  <style>
+    body { font-family: Arial, sans-serif; margin: 30px; background: #f4f4f4; }
+    h1, h2 { color: #2e6c80; }
+    .section { background: white; padding: 20px; margin-bottom: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    label { font-weight: bold; display: block; margin-top: 10px; }
+    input, textarea { width: 100%; padding: 8px; margin-top: 5px; border-radius: 4px; border: 1px solid #ccc; }
+    button { margin-top: 15px; padding: 10px 20px; background-color: #2e6c80; color: white; border: none; border-radius: 4px; cursor: pointer; }
+    button:hover { background-color: #244f66; }
+    ul { padding-left: 20px; }
+  </style>
+</head>
+<body>
+  <h1>AI Technician Tool (PWA)</h1>
+
+  <div class="section">
+    <h2>Record Entry</h2>
+    <form id="aiForm">
+      <label>Date:</label><input type="date" id="date" />
+      <label>Farm:</label><input type="text" id="farm" />
+      <label>Cow ID:</label><input type="text" id="cowId" />
+      <label>Breed:</label><input type="text" id="breed" />
+      <label>Semen Straw Used:</label><input type="text" id="semen" />
+      <label>Method:</label><input type="text" id="method" />
+      <label>Heat Signs Observed:</label><input type="text" id="heatSigns" />
+      <label>Technician Notes:</label><textarea rows="3" id="notes"></textarea>
+      <button type="button" onclick="saveRecord()">Save Record</button>
+    </form>
+  </div>
+
+  <div class="section">
+    <h2>Saved Records</h2>
+    <table border="1" cellpadding="6" id="recordTable">
+      <tr><th>Date</th><th>Farm</th><th>Cow ID</th><th>Breed</th><th>Semen</th><th>Method</th><th>Heat</th><th>Notes</th></tr>
+    </table>
+  </div>
+
+  <script>
+    let db;
+    const request = indexedDB.open("aiToolDB", 1);
+
+    request.onerror = () => alert("Database error");
+
+    request.onsuccess = () => {
+      db = request.result;
+      displayRecords();
+    };
+
+    request.onupgradeneeded = (event) => {
+      db = event.target.result;
+      db.createObjectStore("records", { autoIncrement: true });
+    };
+
+    function saveRecord() {
+      const tx = db.transaction("records", "readwrite");
+      const store = tx.objectStore("records");
+
+      const data = {
+        date: document.getElementById("date").value,
+        farm: document.getElementById("farm").value,
+        cowId: document.getElementById("cowId").value,
+        breed: document.getElementById("breed").value,
+        semen: document.getElementById("semen").value,
+        method: document.getElementById("method").value,
+        heatSigns: document.getElementById("heatSigns").value,
+        notes: document.getElementById("notes").value,
+      };
+
+      store.add(data);
+      tx.oncomplete = () => {
+        document.getElementById("aiForm").reset();
+        displayRecords();
+      };
+    }
+
+    function displayRecords() {
+      const tx = db.transaction("records", "readonly");
+      const store = tx.objectStore("records");
+      const table = document.getElementById("recordTable");
+      table.innerHTML = "<tr><th>Date</th><th>Farm</th><th>Cow ID</th><th>Breed</th><th>Semen</th><th>Method</th><th>Heat</th><th>Notes</th></tr>";
+
+      store.openCursor().onsuccess = function(event) {
+        const cursor = event.target.result;
+        if (cursor) {
+          const r = cursor.value;
+          const row = table.insertRow();
+          row.innerHTML = `<td>${r.date}</td><td>${r.farm}</td><td>${r.cowId}</td><td>${r.breed}</td><td>${r.semen}</td><td>${r.method}</td><td>${r.heatSigns}</td><td>${r.notes}</td>`;
+          cursor.continue();
+        }
+      };
+    }
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('service-worker.js');
+    }
+  </script>
+</body>
+</html>
