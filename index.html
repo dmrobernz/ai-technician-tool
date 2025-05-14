@@ -5,7 +5,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>AI Technician Tool</title>
-  <link rel="manifest" href="manifest.json">
+  <link rel="manifest" href="manifest.json" />
   <style>
     body { font-family: Arial, sans-serif; margin: 30px; background: #f4f4f4; }
     h1, h2 { color: #2e6c80; }
@@ -14,7 +14,9 @@
     input, textarea { width: 100%; padding: 8px; margin-top: 5px; border-radius: 4px; border: 1px solid #ccc; }
     button { margin-top: 15px; padding: 10px 20px; background-color: #2e6c80; color: white; border: none; border-radius: 4px; cursor: pointer; }
     button:hover { background-color: #244f66; }
-    ul { padding-left: 20px; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 8px; border: 1px solid #ccc; text-align: left; }
+    .btn-group button { margin-right: 5px; }
   </style>
 </head>
 <body>
@@ -23,6 +25,7 @@
   <div class="section">
     <h2>Record Entry</h2>
     <form id="aiForm">
+      <input type="hidden" id="recordKey" />
       <label>Date:</label><input type="date" id="date" />
       <label>Farm:</label><input type="text" id="farm" />
       <label>Cow ID:</label><input type="text" id="cowId" />
@@ -37,32 +40,33 @@
 
   <div class="section">
     <h2>Saved Records</h2>
-    <table border="1" cellpadding="6" id="recordTable">
-      <tr><th>Date</th><th>Farm</th><th>Cow ID</th><th>Breed</th><th>Semen</th><th>Method</th><th>Heat</th><th>Notes</th></tr>
+    <table id="recordTable">
+      <thead>
+        <tr><th>Date</th><th>Farm</th><th>Cow ID</th><th>Breed</th><th>Semen</th><th>Method</th><th>Heat</th><th>Notes</th><th>Actions</th></tr>
+      </thead>
+      <tbody></tbody>
     </table>
+    <button onclick="exportCSV()">Export to CSV</button>
   </div>
 
   <script>
     let db;
-    const request = indexedDB.open("aiToolDB", 1);
+    const request = indexedDB.open("aiToolDB", 2);
 
-    request.onerror = () => alert("Database error");
+    request.onupgradeneeded = event => {
+      db = event.target.result;
+      if (!db.objectStoreNames.contains("records")) {
+        db.createObjectStore("records", { autoIncrement: true });
+      }
+    };
 
     request.onsuccess = () => {
       db = request.result;
       displayRecords();
     };
 
-    request.onupgradeneeded = (event) => {
-      db = event.target.result;
-      db.createObjectStore("records", { autoIncrement: true });
-    };
-
     function saveRecord() {
-      const tx = db.transaction("records", "readwrite");
-      const store = tx.objectStore("records");
-
-      const data = {
+      const record = {
         date: document.getElementById("date").value,
         farm: document.getElementById("farm").value,
         cowId: document.getElementById("cowId").value,
@@ -70,10 +74,12 @@
         semen: document.getElementById("semen").value,
         method: document.getElementById("method").value,
         heatSigns: document.getElementById("heatSigns").value,
-        notes: document.getElementById("notes").value,
+        notes: document.getElementById("notes").value
       };
-
-      store.add(data);
+      const key = document.getElementById("recordKey").value;
+      const tx = db.transaction("records", "readwrite");
+      const store = tx.objectStore("records");
+      key ? store.put(record, Number(key)) : store.add(record);
       tx.oncomplete = () => {
         document.getElementById("aiForm").reset();
         displayRecords();
@@ -83,16 +89,67 @@
     function displayRecords() {
       const tx = db.transaction("records", "readonly");
       const store = tx.objectStore("records");
-      const table = document.getElementById("recordTable");
-      table.innerHTML = "<tr><th>Date</th><th>Farm</th><th>Cow ID</th><th>Breed</th><th>Semen</th><th>Method</th><th>Heat</th><th>Notes</th></tr>";
-
-      store.openCursor().onsuccess = function(event) {
+      const tbody = document.querySelector("#recordTable tbody");
+      tbody.innerHTML = "";
+      store.openCursor().onsuccess = event => {
         const cursor = event.target.result;
         if (cursor) {
           const r = cursor.value;
-          const row = table.insertRow();
-          row.innerHTML = `<td>${r.date}</td><td>${r.farm}</td><td>${r.cowId}</td><td>${r.breed}</td><td>${r.semen}</td><td>${r.method}</td><td>${r.heatSigns}</td><td>${r.notes}</td>`;
+          const row = tbody.insertRow();
+          row.innerHTML = `
+            <td>${r.date}</td><td>${r.farm}</td><td>${r.cowId}</td><td>${r.breed}</td>
+            <td>${r.semen}</td><td>${r.method}</td><td>${r.heatSigns}</td><td>${r.notes}</td>
+            <td class="btn-group">
+              <button onclick="editRecord(${cursor.key})">Edit</button>
+              <button onclick="deleteRecord(${cursor.key})">Delete</button>
+            </td>`;
           cursor.continue();
+        }
+      };
+    }
+
+    function editRecord(key) {
+      const tx = db.transaction("records", "readonly");
+      const store = tx.objectStore("records");
+      const req = store.get(key);
+      req.onsuccess = () => {
+        const r = req.result;
+        document.getElementById("recordKey").value = key;
+        document.getElementById("date").value = r.date;
+        document.getElementById("farm").value = r.farm;
+        document.getElementById("cowId").value = r.cowId;
+        document.getElementById("breed").value = r.breed;
+        document.getElementById("semen").value = r.semen;
+        document.getElementById("method").value = r.method;
+        document.getElementById("heatSigns").value = r.heatSigns;
+        document.getElementById("notes").value = r.notes;
+      };
+    }
+
+    function deleteRecord(key) {
+      const tx = db.transaction("records", "readwrite");
+      const store = tx.objectStore("records");
+      store.delete(key).onsuccess = () => displayRecords();
+    }
+
+    function exportCSV() {
+      const tx = db.transaction("records", "readonly");
+      const store = tx.objectStore("records");
+      const rows = [["Date","Farm","Cow ID","Breed","Semen","Method","Heat Signs","Notes"]];
+      store.openCursor().onsuccess = e => {
+        const cursor = e.target.result;
+        if (cursor) {
+          const r = cursor.value;
+          rows.push([r.date, r.farm, r.cowId, r.breed, r.semen, r.method, r.heatSigns, r.notes]);
+          cursor.continue();
+        } else {
+          const csvContent = rows.map(e => e.join(",")).join("\n");
+          const blob = new Blob([csvContent], { type: "text/csv" });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = "ai_records.csv";
+          a.click();
         }
       };
     }
