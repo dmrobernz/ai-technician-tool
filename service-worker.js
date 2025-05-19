@@ -1,0 +1,1 @@
+// Service worker placeholder for offline capability
