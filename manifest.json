@@ -1,9 +1,0 @@
-{
-  "name": "AI Technician Tool",
-  "short_name": "AITool",
-  "start_url": "index.html",
-  "display": "standalone",
-  "background_color": "#ffffff",
-  "description": "Offline tool for AI technicians",
-  "icons": []
-}
