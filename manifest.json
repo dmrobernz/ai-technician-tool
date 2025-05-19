@@ -1,8 +1,0 @@
-{
-    "name": "AI Technician Tool",
-    "short_name": "AI Tool",
-    "start_url": "./index.html",
-    "display": "standalone",
-    "background_color": "#ffffff",
-    "description": "Tool for AI Technicians to track insemination data."
-}
