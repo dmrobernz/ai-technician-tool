@@ -1,0 +1,34 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>AI Technician Full Version</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+    <div class="container">
+        <h1>AI Technician Full Version</h1>
+        <form id="entryForm">
+            <label>Farm Name:<input type="text" id="farmName" required /></label>
+            <label>Technician:<input type="text" id="technician" required /></label>
+            <label>Tech Number:<input type="text" id="techNumber" required /></label>
+            <label>Tech Assist:<input type="text" id="techAssist" /></label>
+            <label>Date:<input type="date" id="entryDate" required /></label>
+            <label>Cow ID:<input type="text" id="cowId" required /></label>
+            <label>Bull Used:<input type="text" id="bullUsed" required /></label>
+            <label>Semen Type:
+                <select id="semenType">
+                    <option value="Sexed">Sexed</option>
+                    <option value="Conventional">Conventional</option>
+                </select>
+            </label>
+            <button type="submit">Add Entry</button>
+        </form>
+        <h2>Entries</h2>
+        <ul id="entryList"></ul>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>
